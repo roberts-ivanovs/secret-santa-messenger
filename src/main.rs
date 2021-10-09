@@ -5,7 +5,6 @@ use aws_sdk_sns::{self, model::MessageAttributeValue, output::PublishOutput};
 use rand::prelude::*;
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Serialize, Deserialize, Clone)]
 struct PhoneNumber(String);
 
@@ -30,7 +29,30 @@ impl Entry {
 #[tokio::main]
 async fn main() {
     let items = vec![
-        Entry::new("+37122222222".to_owned(), "name".to_owned()),
+        Entry::new(
+            "+37122222222".to_owned(),
+            "Template".to_owned(),
+        ),
+        Entry::new(
+            "+37122222222".to_owned(),
+            "Template".to_owned(),
+        ),
+        Entry::new(
+            "+37122222222".to_owned(),
+            "Template".to_owned(),
+        ),
+        Entry::new(
+            "+37122222222".to_owned(),
+            "Template".to_owned(),
+        ),
+        Entry::new(
+            "+37122222222".to_owned(),
+            "Template".to_owned(),
+        ),
+        Entry::new(
+            "+37122222222".to_owned(),
+            "Template".to_owned(),
+        ),
     ];
     let mut rng = rand::thread_rng();
     let shuffled_items = {
@@ -39,16 +61,29 @@ async fn main() {
         items
     };
 
+    let items = [
+        (shuffled_items.get(0).unwrap(), shuffled_items.get(5).unwrap()),
+        (shuffled_items.get(1).unwrap(), shuffled_items.get(4).unwrap()),
+        (shuffled_items.get(2).unwrap(), shuffled_items.get(3).unwrap()),
+        (shuffled_items.get(3).unwrap(), shuffled_items.get(1).unwrap()),
+        (shuffled_items.get(4).unwrap(), shuffled_items.get(0).unwrap()),
+        (shuffled_items.get(5).unwrap(), shuffled_items.get(2).unwrap()),
+    ];
+
     let shared_config = aws_config::load_from_env().await;
     let client = ClientWrapper(aws_sdk_sns::Client::new(&shared_config));
-    let res = items.iter().zip(shuffled_items.iter()).map(|(recipient, target)| {
-        let msg = format!("Hi, {}! You're Secret Santa this year for: {}", recipient.name.0, target.name.0);
-        let res = client.construct_and_send(&recipient.number.0, msg);
-        res
-    }).collect::<Vec<_>>();
+    let res = items.iter()
+        .map(|(recipient, target)| {
+            let msg = format!(
+                "Hi, {}! You're Secret Santa this year for: {}",
+                recipient.name.0, target.name.0
+            );
+            let res = client.construct_and_send(&recipient.number.0, msg);
+            res
+        })
+        .collect::<Vec<_>>();
     let res = futures::future::join_all(res).await;
     println!("{:#?}", res);
-
 }
 
 struct ClientWrapper(aws_sdk_sns::Client);
@@ -67,7 +102,8 @@ impl ClientWrapper {
         //     name.clone()
         // );
 
-        let res = self.0
+        let res = self
+            .0
             .publish()
             .phone_number(to)
             .message(message)
@@ -80,5 +116,4 @@ impl ClientWrapper {
 
         res
     }
-
 }
